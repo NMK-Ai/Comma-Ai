@@ -183,11 +183,17 @@ class CarInterface(CarInterfaceBase):
         # stock filter output values:     0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108
         # modified filter output values:  0x009F, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0108, 0x0400, 0x0480
         # note: max request allowed is 4096, but request is capped at 3840 in firmware, so modifications result in 2x max
-        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 5120],  [0, 2560, 3840]]
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.55], [0.165]] # TODO: test these numbers
+        #ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560, 5120],  [0, 2560, 3840]]
+        ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 0x917, 0xDC5, 0x1017, 0x119F, 0x140B, 0x1680, 0x2880, 0x2D00],  [0, 0x201, 0x301, 0x478, 0x5EB, 0x801, 0x9FF, 0xE01, 0xF00]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.4], [0.12]]
+
+        #ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 0x917, 0xDC5, 0x1017, 0x119F, 0x140B, 0x1680],  [0, 0x201, 0x301, 0x478, 0x5EB, 0x801, 0x9FF]]
+        #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]] # TODO: test these numbers
+        #ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 0xa00],  [0, 0xa00]]
+        #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]] # TODO: test these numbers
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560], [0, 2560]] # max request allowed is 4096, but above 2560 is flat
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[1.1], [0.33]] # TODO: test these numbers
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       tire_stiffness_factor = 1.
 
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
