@@ -80,6 +80,9 @@ class Planner():
     self.v_model = 0.0
     self.a_model = 0.0
 
+    self.v_trajectories = np.zeros((20*5, 5))
+    self.a_trajectories = np.zeros((20*5, 5))
+
     self.longitudinalPlanSource = 'cruise'
     self.fcw_checker = FCWChecker()
     self.path_x = np.arange(192)
@@ -130,23 +133,25 @@ class Planner():
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
 
-    if len(sm['model'].path.poly):
-      path = list(sm['model'].path.poly)
+    if len(sm['model'].longitudinal.speeds):
+      speeds = np.array(list((sm['model'].longitudinal.speeds)))
+      accels = np.array(list((sm['model'].longitudinal.accelerations)))
 
-      # Curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
-      # y = a x^3 + b x^2 + c x + d, y' = 3 a x^2 + 2 b x + c, y'' = 6 a x + 2 b
-      # k = y'' / (1 + y'^2)^1.5
-      # TODO: compute max speed without using a list of points and without numpy
-      y_p = 3 * path[0] * self.path_x**2 + 2 * path[1] * self.path_x + path[2]
-      y_pp = 6 * path[0] * self.path_x + 2 * path[1]
-      curv = y_pp / (1. + y_p**2)**1.5
+      self.v_trajectories[-1:] = self.v_trajectories[:-1]
+      self.a_trajectories[-1:] = self.a_trajectories[:-1]
 
-      a_y_max = 2.975 - v_ego * 0.0375  # ~1.85 @ 75mph, ~2.6 @ 25mph
-      v_curvature = np.sqrt(a_y_max / np.clip(np.abs(curv), 1e-4, None))
-      model_speed = np.min(v_curvature)
-      model_speed = max(20.0 * CV.MPH_TO_MS, model_speed) # Don't slow down below 20mph
+      self.v_trajectories[0] = speeds[:5]
+      self.a_trajectories[0] = accels[:5]
+
+      self.v_model = 0
+      self.a_model = 0
+      for i in range(5):
+        self.v_model += self.v_trajectories[20*i, i]/5
+        self.a_model += self.a_trajectories[20*i, i]/5
+
     else:
-      model_speed = MAX_SPEED
+      self.v_model = MAX_SPEED
+      self.a_model = 10
 
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop:
@@ -165,11 +170,6 @@ class Planner():
                                                     jerk_limits[1], jerk_limits[0],
                                                     LON_MPC_STEP)
 
-      self.v_model, self.a_model = speed_smoother(self.v_acc_start, self.a_acc_start,
-                                                    model_speed,
-                                                    2*accel_limits[1], accel_limits[0],
-                                                    2*jerk_limits[1], jerk_limits[0],
-                                                    LON_MPC_STEP)
 
       # cruise speed can't be negative even is user is distracted
       self.v_cruise = max(self.v_cruise, 0.)
