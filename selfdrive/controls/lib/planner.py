@@ -137,8 +137,8 @@ class Planner():
       speeds = np.array(list((sm['model'].longitudinal.speeds)))
       accels = np.array(list((sm['model'].longitudinal.accelerations)))
 
-      self.v_trajectories[-1:] = self.v_trajectories[:-1]
-      self.a_trajectories[-1:] = self.a_trajectories[:-1]
+      self.v_trajectories[1:] = self.v_trajectories[:-1]
+      self.a_trajectories[1:] = self.a_trajectories[:-1]
 
       self.v_trajectories[0] = speeds[:5]
       self.a_trajectories[0] = accels[:5]
